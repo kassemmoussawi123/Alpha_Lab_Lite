@@ -3,7 +3,7 @@ import json
 import uuid 
 db_name = "alpha_lab_lite.db"
 def init_db(): 
-    """create table if they don't exist."""
+    """create table if they don't exist."""  
     connect = sq.connect(db_name)
     cursor = connect.cursor()
     cursor.execute("""CREATE TABLE IF NOT EXISTS alpha_lab_lite (
@@ -20,6 +20,7 @@ def save_result(memory):
     script_id = str(uuid.uuid4()) # generate a unique script ID
     connection = sq.connect(db_name)
     cursor = connection.cursor()
+    //add try catch and return 0/ number of inserts w
     for variable_name, values in memory.items():
         values_json = json.dumps(values)
 
