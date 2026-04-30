@@ -2,8 +2,9 @@ import sqlite3 as sq
 import json 
 import uuid 
 db_name = "alpha_lab_lite.db"
+
 def init_db(): 
-    """create table if they don't exist."""  
+    """create table if they don't exist."""
     connect = sq.connect(db_name)
     cursor = connect.cursor()
     cursor.execute("""CREATE TABLE IF NOT EXISTS alpha_lab_lite (
@@ -14,13 +15,14 @@ def init_db():
     )""")
     connect.commit()
     connect.close()
+    
+    
 def save_result(memory):
-    """Save all variables from memory into SQLite and return a script ID."""
+    """Save all variables from memory into SQLite and return a script identifier."""
     init_db()
     script_id = str(uuid.uuid4()) # generate a unique script ID
     connection = sq.connect(db_name)
     cursor = connection.cursor()
-    //add try catch and return 0/ number of inserts w
     for variable_name, values in memory.items():
         values_json = json.dumps(values)
 
@@ -38,7 +40,7 @@ def save_result(memory):
     return script_id
 
 def load_result(script_id, variable_names):
-    """Load selected variables for a given script ID from SQLite."""
+    """Load selected variables for a given script identifier from SQLite."""
     init_db()
 
     connection = sq.connect(db_name)

@@ -8,6 +8,10 @@ Many data workflows repeat the same pattern: fetch a series, transform it, gener
 
 The project is intentionally small. Its value is in showing how parsing, execution, transformation logic, persistence, a CLI, and an API can work together in one clean pipeline.
 
+## Walkthrough Notebook
+
+For a step-by-step project explanation and demo, see the [AlphaLabLite Walkthrough Notebook](./AlphaLabLite_Walkthrough.ipynb).
+
 ## Core Features
 
 - Custom DSL syntax for defining transformation pipelines

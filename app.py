@@ -14,6 +14,7 @@ class ExecuteRequest(BaseModel):
 
 @app.post("/execute")
 def execute_script(request: ExecuteRequest):
+    """ Execute provided script and return id"""
     memory = executeScript(request.script)
     script_id = save_result(memory)
 
@@ -26,6 +27,8 @@ def execute_script(request: ExecuteRequest):
 
 @app.get("/view")
 def view_result(script_id: str, variables: str):
+    """ view results for a given script identifier and variable names."""
+    
     variable_names = variables.split(",")
 
     data = load_result(script_id, variable_names)
@@ -35,6 +38,15 @@ def view_result(script_id: str, variables: str):
 
 @app.get("/view/{script_id}")
 def view_result_by_path(script_id: str, items: list[str] = Query(...)):
+    """load the needed  variables from saved  script execution
+    this route matches the pdf  example:
+    /view/{script_id}?items=price&items=result
+    rhe user provides:
+    - script_identifier : use unique id  returned by /execute
+    - items:  1 or more variable names to load
+    rhe function returns the saved values from sqlite dataBase .
+    """
+
     data = load_result(script_id, items)
 
     return data

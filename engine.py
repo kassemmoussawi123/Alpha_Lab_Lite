@@ -1,6 +1,6 @@
 from parsing import parseScript as prs
 import transformations 
-#dictionary to map function names to actual transformation functions.
+#dictionary to map function names to actual transformation functions, and (i can switch case or enum for it) . 
 TRANSFORMATIONS = {
     "Fetch": transformations.Fetch,
     "SimpleMovingAverage": transformations.simpleMovingAverage,
@@ -10,6 +10,7 @@ TRANSFORMATIONS = {
     "ConstantSeries": transformations.ConstantSeries,
     "PortfolioSimulation": transformations.PortfolioSimulation
 }
+
 def configToArgs(configs):
     """Convert config value to int, float, or string."""
     try:
@@ -31,7 +32,7 @@ def executeCommand(command, memory):
     if function_name not in TRANSFORMATIONS:
         raise ValueError(f"Unknown function: {function_name}")
 
-    func = TRANSFORMATIONS[function_name]
+ 
 
     args = [configToArgs(config) for config in configs]
 
@@ -40,14 +41,11 @@ def executeCommand(command, memory):
         if input_name not in memory:
             raise ValueError(f"Variable '{input_name}' was used before being created.")
         input_series.append(memory[input_name])
+    
+    func = TRANSFORMATIONS[function_name]
+    functions_oneInput_oneConfig= ["SimpleMovingAverage", "RateOfChange",   "ConstantSeries"]
 
-    if function_name == "SimpleMovingAverage":
-        result = func(input_series[0], args[0])
-
-    elif function_name == "RateOfChange":
-        result = func(input_series[0], args[0])
-
-    elif function_name == "ConstantSeries":
+    if function_name in functions_oneInput_oneConfig:
         result = func(input_series[0], args[0])
     
     # PortfolioSimulation{balance}{entry, exit, price}
