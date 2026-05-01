@@ -369,6 +369,6 @@ Confirm that:
 - Add optional plotting for time-series outputs
 - Add a small frontend for running scripts and viewing results
 
-## One-Minute Interview Explanation
+## Small_Explanation 
 
 AlphaLabLite is a small Python DSL engine for time-series workflows. A user writes a script using the format `variable = Function{configs}{inputs}`. The parser turns each line into structured commands, the engine resolves dependencies from memory, runs transformation functions such as moving averages and crossover signals, and saves the generated variables into SQLite. I exposed the same execution flow through both a command-line interface and a FastAPI API. The project demonstrates parsing, function dispatch, state management, persistence, and API design in a compact and easy-to-explain system.

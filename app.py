@@ -25,16 +25,6 @@ def execute_script(request: ExecuteRequest):
     }
 
 
-@app.get("/view")
-def view_result(script_id: str, variables: str):
-    """ view results for a given script identifier and variable names."""
-    
-    variable_names = variables.split(",")
-
-    data = load_result(script_id, variable_names)
-
-    return data
-
 
 @app.get("/view/{script_id}")
 def view_result_by_path(script_id: str, items: list[str] = Query(...)):
