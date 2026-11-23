@@ -13,6 +13,7 @@ import urllib.request
 import uuid
 
 from engine import executeScript
+from strategy_checks import check_strategy
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data" / "fetch_transformation_data.csv"
@@ -33,7 +34,7 @@ def validate_proposal(p):
         raise ValueError("hypothesis must have 1..1000 characters")
     return p
 
-def propose(mode, feedback, attempt=0, goal="Compare moving-average strategies"):
+def propose(mode, feedback, attempt=0, goal="Compare moving-average strategies", errors=()):
     if mode == "offline":
         # Deterministic feedback-guided local search, not an LLM.
         candidates = [(0.3, 20), (0.15, 10), (0.5, 30), (0.7, 5), (0.1, 40), (0.4, 15)]
@@ -52,7 +53,7 @@ def propose(mode, feedback, attempt=0, goal="Compare moving-average strategies")
     if not base.startswith("https://"):
         raise ValueError("LLM endpoint must use HTTPS")
     payload = {"model":model, "messages":[{"role":"system","content":SYSTEM},
-        {"role":"user","content":json.dumps({"goal":goal,"feedback":feedback,"attempt":attempt})}],
+        {"role":"user","content":json.dumps({"goal":goal,"feedback":feedback,"attempt":attempt,"validation_errors":list(errors)[-2:]})}],
         "max_tokens":400}
     req = urllib.request.Request(base+"/chat/completions", data=json.dumps(payload).encode(),
         headers={"Authorization":"Bearer "+key,"Content-Type":"application/json"})
@@ -137,14 +138,16 @@ def run(label="OneMinuteGoldPrices", rounds=3, mode="offline",
     for iteration in range(rounds):
         for attempt in range(2):
             try:
-                p = propose(mode,feedback,attempt,goal)
+                p = propose(mode,feedback,attempt,goal,failures)
                 if p["window"] >= len(validation):
                     raise ValueError("Window must be shorter than validation segment")
                 if any((p["alpha"],p["window"]) == (x["proposal"]["alpha"],x["proposal"]["window"]) for x in feedback):
                     raise ValueError("Duplicate proposal")
+                checks = check_strategy(script_for(p), [x["script"] for x in feedback])
                 result = evaluate(p,validation,fee,slip)
                 feedback.append({"iteration":iteration,"proposal":p,
-                                 "validation":compact(result),"script":script_for(p)})
+                                 "validation":compact(result),"script":script_for(p),
+                                 "strategy_checks":checks})
                 break
             except (ValueError,KeyError,TypeError) as error:
                 failures.append({"iteration":iteration,"attempt":attempt,"error":str(error)})
@@ -162,7 +165,7 @@ def run(label="OneMinuteGoldPrices", rounds=3, mode="offline",
     report = {"run_id":str(uuid.uuid4()),"mode":mode,"goal":goal,
         "dataset":label,"data_sha256":hashlib.sha256(DATA.read_bytes()).hexdigest(),
         "code_revision":revision,"code_sha256":hashlib.sha256(b"".join(
-            (ROOT/name).read_bytes() for name in ("research.py","engine.py","parsing.py","transformations.py"))).hexdigest(),
+            (ROOT/name).read_bytes() for name in ("research.py","engine.py","parsing.py","transformations.py","strategy_checks.py"))).hexdigest(),
         "split":{"validation_bars":len(validation),"test_bars":len(test),
                  "method":"70/30 chronological; indicators restart on each segment"},
         "costs":{"fee_bps":fee,"slippage_bps":slip},

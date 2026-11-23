@@ -67,3 +67,17 @@ def research_experiment(request: ResearchRequest):
         return run_research(label=request.dataset, rounds=request.rounds)
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+class AnalyzeRequest(BaseModel):
+    script: str = Field(min_length=1, max_length=10000)
+    previous_scripts: list[str] = Field(default_factory=list, max_length=6)
+
+@app.post("/analyze")
+def analyze_strategy(request: AnalyzeRequest):
+    """Check expression complexity and similarity without executing a strategy."""
+    from strategy_checks import check_strategy
+    try:
+        return check_strategy(request.script, request.previous_scripts)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
