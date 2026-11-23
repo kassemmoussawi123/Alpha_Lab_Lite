@@ -1,16 +1,18 @@
 import numpy as np 
 import pandas as pd
+from pathlib import Path
+DATA_PATH = Path(__file__).resolve().parent / 'data' / 'fetch_transformation_data.csv'
 
 def pull_data():
     """load the transformation  csv file."""
-    prices_df = pd.read_csv("data/fetch_transformation_data.csv")
+    prices_df = pd.read_csv(DATA_PATH)
 
     if "label" in prices_df.columns:
         return prices_df
 
     # Some CSV files do not include a header row.
     # In that case, read again and create column names manually.
-    prices_df = pd.read_csv("data/fetch_transformation_data.csv", header=None)
+    prices_df = pd.read_csv(DATA_PATH, header=None)
     prices_df = prices_df.rename(columns={0: "label"})
 
     return prices_df

@@ -372,3 +372,86 @@ Confirm that:
 ## Small_Explanation 
 
 AlphaLabLite is a small Python DSL engine for time-series workflows. A user writes a script using the format `variable = Function{configs}{inputs}`. The parser turns each line into structured commands, the engine resolves dependencies from memory, runs transformation functions such as moving averages and crossover signals, and saves the generated variables into SQLite. I exposed the same execution flow through both a command-line interface and a FastAPI API. The project demonstrates parsing, function dispatch, state management, persistence, and API design in a compact and easy-to-explain system.
+
+
+## Agentic research extension
+
+This branch adds a bounded proposal -> DSL validation -> execution -> feedback
+loop inspired by [R&D-Agent-Quant](https://arxiv.org/abs/2505.15155).
+It is a small original extension to AlphaLabLite, not an implementation or
+reproduction of RD-Agent(Q), and does not use Qlib.
+
+### Run without API credentials
+
+```bash
+pip install -r requirements.txt
+python -m unittest discover -s tests -v
+python research.py --mode offline --rounds 3
+uvicorn app:app --host 127.0.0.1 --port 8000
+```
+
+Open http://127.0.0.1:8000/docs and call POST /research with
+`{"dataset":"OneMinuteGoldPrices","rounds":3}`.
+CLI results go to research_report.json and research_runs.db.
+
+Offline mode is deterministic feedback-guided parameter search, not an LLM.
+It runs the complete workflow without paid services. LLM mode uses an
+OpenAI-compatible HTTPS chat-completions endpoint. Set ALPHALAB_API_KEY,
+ALPHALAB_MODEL, and optionally ALPHALAB_API_BASE in your environment, then run:
+
+```bash
+python research.py --mode llm --rounds 3 --goal "Compare moving-average crossover strategies after costs"
+```
+
+The natural-language goal guides proposals only within the EMA/SMA family.
+This is not a general natural-language strategy compiler.
+Never commit API keys. The provider receives the goal and validation summaries,
+not the test segment. At most two proposal attempts per round are allowed.
+Malformed, duplicate, or out-of-range proposals are rejected. Model/API transport
+failures stop execution. Real-provider LLM execution requires credentials and
+has not been verified in the supplied demonstration.
+
+### What the extension does
+
+- Restricts proposals to typed alpha/window/hypothesis JSON.
+- Converts accepted proposals to registered DSL transformations; never executes
+  model-generated Python or shell commands.
+- Uses a chronological 70/30 validation/test split. Only validation metrics
+  guide selection. The selected proposal is evaluated on test once per run.
+- Executes signals one bar later, with long-only cash-limited positions,
+  configurable transaction costs, and final liquidation costs.
+- Records equity, trades, return, drawdown, a costed buy-and-hold baseline,
+  scripts, dataset and source hashes, proposal failures, and SQLite history.
+- Adds a CI workflow that runs numerical/integration tests and the offline demo.
+
+Indicators restart in each segment, so test evaluation has a fresh warm-up.
+The bundled dataset is small and lacks timestamps. No annualized Sharpe ratio
+is reported. A no-trade strategy is possible and must not be called a successful
+trading strategy. This workflow does not establish profitability or reproduce
+published results. Research reruns can also leak holdout information through
+human decisions; reserve a new dataset for final research evaluation.
+
+The original PortfolioSimulation operation remains a legacy demonstration.
+The research runner uses its separate cost-aware simulator.
+
+### Internship project description
+
+**AlphaLabLite: A Verifiable Research Loop for Time-Series Experiments**
+
+Extended a Python DSL engine with a bounded experiment workflow inspired by
+R&D-Agent-Quant. Implemented structured proposal validation, feedback-guided
+search, chronological holdout evaluation, next-bar portfolio simulation with
+costs, and reproducible SQLite experiment records. Added an optional LLM
+proposal adapter and automated tests for numerical correctness, execution
+timing, validation, and reproducibility.
+
+Verification scope: the offline workflow and mocked LLM adapter were tested.
+A real-provider LLM run and broader market evaluation remain future work.
+Do not claim a multi-agent system, Qlib integration, RD-Agent reproduction,
+or improved investment returns.
+
+Related work:
+- Qlib: https://github.com/microsoft/qlib — broader quantitative research platform.
+- RD-Agent(Q): https://arxiv.org/abs/2505.15155 — iterative research/development feedback.
+- AlphaAgent: https://arxiv.org/abs/2502.16789 — originality and complexity controls;
+  those controls are not implemented here beyond duplicate parameter rejection.

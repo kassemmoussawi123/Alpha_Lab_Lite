@@ -1,6 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi import Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+import math
+from research import run as run_research
 
 from engine import executeScript
 from storage import save_result, load_result
@@ -15,8 +17,11 @@ class ExecuteRequest(BaseModel):
 @app.post("/execute")
 def execute_script(request: ExecuteRequest):
     """ Execute provided script and return id"""
-    memory = executeScript(request.script)
-    script_id = save_result(memory)
+    try:
+        memory = executeScript(request.script)
+        script_id = save_result(memory)
+    except (ValueError, FileNotFoundError) as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
 
     return {
         "message": "Script successfully executed",
@@ -39,4 +44,26 @@ def view_result_by_path(script_id: str, items: list[str] = Query(...)):
 
     data = load_result(script_id, items)
 
-    return data
+    return clean_json(data)
+
+
+def clean_json(value):
+    if isinstance(value, dict):
+        return {k:clean_json(v) for k,v in value.items()}
+    if isinstance(value, list):
+        return [clean_json(v) for v in value]
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
+
+class ResearchRequest(BaseModel):
+    dataset: str = "OneMinuteGoldPrices"
+    rounds: int = Field(default=3, ge=1, le=6)
+
+@app.post("/research")
+def research_experiment(request: ResearchRequest):
+    """Offline demo only. Use CLI for explicitly configured LLM execution."""
+    try:
+        return run_research(label=request.dataset, rounds=request.rounds)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
