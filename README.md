@@ -240,3 +240,42 @@ interface and an optional LLM proposal adapter expose the workflow.
 
 AlphaLabLite is an independent implementation. It does not depend on Qlib or
 reproduce these systems' reported results.
+
+
+## Controlled evaluation benchmark
+
+Reproduce the comparison:
+
+```bash
+python benchmark.py --out benchmark_results.json --markdown docs/BENCHMARK.md
+```
+
+The protocol compares preset-candidate search, equal-budget random search, a
+fixed EMA/SMA strategy, buy-and-hold, and cash. Both search methods receive six
+candidates per selection step and use identical selection rules, costs, and
+splits. Four synthetic conditions (trend, range, volatility shift, shock), three
+fixed seeds, and 600 observations per case produce 12 controlled cases.
+
+See [benchmark results and protocol](docs/BENCHMARK.md). These engineered cases
+support functional comparisons and reproducibility. They do not demonstrate
+real-market alpha, statistical significance, or LLM superiority. No language
+model is used in this benchmark.
+
+### Project contribution
+
+The contribution is a compact implementation that combines controlled proposal
+execution, explicit temporal evaluation, structured stress checks, and saved
+evidence. It is not presented as a new trading algorithm. The intended benefit
+is faster, more inspectable research review; time savings and user value still
+need measurement with traders.
+
+### Next evaluation gates
+
+- Live LLM: measure valid proposals within two attempts, execution success,
+  latency, and cost on a fixed set of 30 tasks.
+- Independent data: source timestamped history with a documented license,
+  reserve final evaluation data, and record the full candidate-search budget.
+- User study: ask traders to review the same strategy manually and with the
+  report; measure review time and how often they identify planted weaknesses.
+
+These are proposed evaluation gates, not completed results.

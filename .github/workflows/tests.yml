@@ -12,3 +12,4 @@ jobs:
       - run: python -m unittest discover -s tests -v
       - run: python research.py --mode offline --out research_report.json
       - run: python quant.py --out quant_report.json --html quant_report.html
+      - run: python benchmark.py --out benchmark_results.json --markdown docs/BENCHMARK.md
