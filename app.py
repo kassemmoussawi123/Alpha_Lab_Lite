@@ -81,3 +81,28 @@ def analyze_strategy(request: AnalyzeRequest):
         return check_strategy(request.script, request.previous_scripts)
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+class QuantRequest(BaseModel):
+    dataset: str = "OneMinuteGoldPrices"
+    prices: list[float] | None = Field(default=None, min_length=40, max_length=10000)
+    splits: int = Field(default=3, ge=2, le=5)
+    gap: int = Field(default=1, ge=0, le=10)
+    fee_bps: float = Field(default=10, ge=0, lt=2500, allow_inf_nan=False)
+    slippage_bps: float = Field(default=5, ge=0, lt=2500, allow_inf_nan=False)
+    drawdown_weight: float = Field(default=.5, ge=0, le=10, allow_inf_nan=False)
+
+
+@app.post("/quant")
+def quant_audit(request: QuantRequest):
+    """Walk-forward research diagnostics with a final holdout and trader stress tests."""
+    from quant import audit, load_prices, ROOT
+    try:
+        prices = request.prices if request.prices is not None else load_prices(request.dataset)
+        return audit(prices, splits=request.splits, gap=request.gap,
+                     fee=request.fee_bps, slip=request.slippage_bps,
+                     drawdown_weight=request.drawdown_weight,
+                     label="custom" if request.prices is not None else request.dataset,
+                     db=ROOT/"research_runs.db")
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error

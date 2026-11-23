@@ -5,3 +5,5 @@ __pycache__/
 venv/
 .venv/
 research_report.json
+quant_report.json
+quant_report.html
